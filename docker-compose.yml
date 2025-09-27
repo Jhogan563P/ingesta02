@@ -10,19 +10,27 @@ services:
       MYSQL_USER: mi_usuario
       MYSQL_PASSWORD: mi_contraseña
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      timeout: 20s
+      retries: 10
+      start_period: 40s
+      interval: 10s
+    
   ingesta:
-    build: ./ingesta02   # tu Dockerfile de Python está en ./ingesta02
+    build: .
     container_name: ingesta-app
     depends_on:
-      - mysql
+      mysql:
+        condition: service_healthy
+    restart: on-failure:5
     volumes:
       - /home/ubuntu/.aws/credentials:/root/.aws/credentials
     environment:
-      MYSQL_HOST: mysql        # <-- nombre del servicio
+      MYSQL_HOST: mysql
       MYSQL_USER: mi_usuario
       MYSQL_PASSWORD: mi_contraseña
       MYSQL_DATABASE: mi_base
